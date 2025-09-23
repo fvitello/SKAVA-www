@@ -2,7 +2,7 @@ title: SKAVA Project Website
 description: >
   The SKA Visual Analytics (SKAVA) Project
 theme: minima
-baseurl: "/SKAVA"
+baseurl: "/SKAVA-inaf"
 url: "https://fvitello.github.io"
 markdown: kramdown
 paginate: 5
