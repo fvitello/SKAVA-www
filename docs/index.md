@@ -80,6 +80,7 @@ admin-ui/overview
 admin-ui/users-roles
 admin-ui/nodes
 admin-ui/datasets
+admin-ui/upload
 admin-ui/audit
 ```
 
@@ -113,6 +114,7 @@ api/auth
 
 client-integration/visivo-desktop
 client-integration/backend-routing
+client-integration/slurm-backed-backend
 ```
 
 ```{toctree}
@@ -123,6 +125,7 @@ operations/monitoring
 operations/backup
 operations/upgrades
 operations/troubleshooting
+operations/e2e-power9-runbook
 ```
 
 ```{toctree}
