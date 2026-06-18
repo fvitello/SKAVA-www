@@ -171,6 +171,55 @@ This path is intentionally preserved so SKAVA stays useful for sites
 that don't run a VisIVO backend (legacy archives, mirrors). Cost: one
 big download per open, then a normal viewer experience.
 
+## Server-side variant: SODA cutout execution
+
+The flow above is **client-driven**: the VisIVO desktop picks the backend
+and opens the dataset. The same compute-next-to-data contract also powers a
+**server-driven** path for VO/SODA clients that don't run the desktop.
+
+When a VO tool (or any client) calls `POST /soda/execute?ID=…&POS=…&BAND=…`,
+SKAVA itself plays the role the desktop plays above:
+
+```
+VO client → SKAVA /soda/execute
+            ↓ resolves best node + file:// replica
+            ↓ POST /v1/datasets/cutout to the node's VisIVO backend
+            ↓ backend fits.open() + astropy cutout, returns subset
+VO client ← application/fits (streamed through SKAVA)
+```
+
+The byte-level work still happens on the node (the backend reuses the same
+`VISIVO_DATA_ROOT` jail and `file://` resolver as `open_skava`); only the
+small cutout transits the network. The difference is *who* orchestrates:
+
+```{list-table}
+:header-rows: 1
+:widths: 28 36 36
+
+* - Path
+  - Orchestrator
+  - Backend endpoint
+* - Desktop open + interactive compute
+  - VisIVO desktop (`pickBackendForSkavaDataset`)
+  - `/v1/datasets/open_skava` (+ moments / region / channel)
+* - SODA cutout for VO clients
+  - SKAVA (`/soda/execute`)
+  - `/v1/datasets/cutout`
+* - Desktop "SODA subset" action
+  - VisIVO desktop (SKAVA Discovery tab)
+  - `/v1/datasets/cutout` (`save_to_workspace=true`, opened in place)
+```
+
+The desktop **"SODA subset"** button resolves the dataset's DataLink, prompts
+for a POS/BAND region (prefilled from the ObsCore metadata), runs the cutout on
+the matched co-located backend with `save_to_workspace=true`, and opens the
+resulting FITS in place — the cutout never transits to the client. It sits
+alongside the unchanged VLKB-specific cutout flow.
+
+When the node has no co-located backend, SKAVA's `/soda/execute` degrades to a
+metadata-cache staging handoff (and the desktop button reports that a
+co-located backend is required). See [SODA execution](../soda_execution).
+
 ## How to enable this on a new node
 
 1. Deploy a VisIVO backend on the node (`apptainer/backend-conda.def`

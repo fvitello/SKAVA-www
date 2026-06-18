@@ -7,8 +7,48 @@ All notable changes to SKAVA. The repository follows
 
 ### Added
 
+* **TAP ObsTAP profile upgrade** — the ``/tap/sync`` ADQL surface now supports
+  range/equality predicates on whitelisted ObsCore columns (temporal/spectral
+  filtering) and the ObsTAP cone-search geometry
+  ``1 = CONTAINS(POINT('ICRS', s_ra, s_dec), CIRCLE('ICRS', ra, dec, radius))``,
+  reusing the discovery filtering. New VOSI ``GET /tap/tables`` tableset
+  (TAP_SCHEMA equivalent) so TOPCAT/pyvo can introspect columns/UCDs.
+* **SODA execution (compute-next-to-data)** — ``POST /soda/execute`` performs a
+  real byte-level FITS cutout by delegating to the dataset node's co-located
+  VisIVO backend (``/v1/datasets/cutout``) when it serves a ``file://`` replica,
+  streaming ``application/fits`` back; falls back to the staging handoff
+  otherwise. New settings ``SKAVA_VISIVO_BACKEND_TOKEN`` /
+  ``SKAVA_SODA_BACKEND_TIMEOUT_SECONDS``.
+* **Conformant IVOA DataLink VOTable** — ``/datalink/{obs_id}`` with
+  ``RESPONSEFORMAT=application/x-votable+xml`` now emits the standard ``{links}``
+  columns (spec UCDs), IVOA semantics terms, and a SODA cutout service descriptor.
+* DataLink capability flags (``supports_soda_sync_execution`` / ``supports_cutout``)
+  and the ``cutout`` service descriptor now reflect per-dataset execution
+  availability (enabled when a ranked node has a co-located VisIVO backend).
 * Admin UI Phase 3 — audit history viewer with filters + CSV export.
 * Federation fan-out implementation behind ``SKAVA_FEDERATED_SRC_URLS``.
+* **Production deploy hardening** — compose overrides (standalone-TLS / behind
+  existing reverse proxy), container hardening (``no-new-privileges``,
+  ``cap_drop``, ``read_only`` + tmpfs, resource limits), nginx ``/metrics``
+  block + ``/admin`` rate limit, and ``SKAVA_RUN_SEED`` to skip demo seeding
+  in production.
+
+### Fixed
+
+* **PostgreSQL migrations** — shortened revision id ``0005_..._support``
+  (33 → 29 chars); the old id overflowed ``alembic_version.version_num``
+  (VARCHAR(32)) and broke ``alembic upgrade`` on real Postgres (SQLite
+  silently allowed it, hiding it in CI).
+* **Admin audit log on SQLite** — ``audit_log.id`` is now
+  ``BigInteger().with_variant(Integer, "sqlite")`` so the PK auto-increments
+  under SQLite (BIGINT PRIMARY KEY is not the rowid alias); previously every
+  admin action that wrote an audit row failed the test/CI suite.
+* **Admin “Add dataset” route** — ``GET /admin/datasets/{dataset_id:int}`` so
+  the dynamic route no longer shadows ``/admin/datasets/new`` (which tried to
+  parse ``"new"`` as an int).
+* **CI test collection** — ``pythonpath = ["."]`` in pytest config so
+  ``from tests.conftest import …`` resolves under plain ``pytest`` (not only
+  ``python -m pytest``).
 
 ### Done
 
